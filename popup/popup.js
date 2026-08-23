@@ -1,6 +1,6 @@
 /**
  * Memory Match - Chrome Extension
- * Temas + ranking local con chrome.storage
+ * Temas + ranking local + sonidos (Web Audio API)
  */
 
 const THEMES = {
@@ -26,10 +26,78 @@ let state = {
   timerId: null,
   locked: false,
   theme: 'emojis',
-  difficulty: 'medium'
+  difficulty: 'medium',
+  muted: false
 };
 
-// DOM
+// ========== Sound System (Web Audio API) ==========
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+let audioCtx = null;
+
+function getAudioContext() {
+  if (!audioCtx) {
+    audioCtx = new AudioCtx();
+  }
+  // Resume if suspended (Chrome policy)
+  if (audioCtx.state === 'suspended') {
+    audioCtx.resume();
+  }
+  return audioCtx;
+}
+
+function playTone(freq, duration, type = 'sine', volume = 0.15, detune = 0) {
+  if (state.muted) return;
+  try {
+    const ctx = getAudioContext();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = type;
+    osc.frequency.value = freq;
+    osc.detune.value = detune;
+
+    gain.gain.setValueAtTime(volume, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + duration);
+  } catch (e) {
+    // Silently ignore audio errors
+  }
+}
+
+function playFlip() {
+  playTone(520, 0.08, 'sine', 0.12);
+}
+
+function playMatch() {
+  // Nice ascending chime
+  playTone(523.25, 0.12, 'sine', 0.14); // C5
+  setTimeout(() => playTone(659.25, 0.12, 'sine', 0.14), 80); // E5
+  setTimeout(() => playTone(783.99, 0.18, 'sine', 0.16), 160); // G5
+}
+
+function playMismatch() {
+  playTone(220, 0.15, 'triangle', 0.1);
+  setTimeout(() => playTone(180, 0.2, 'triangle', 0.08), 100);
+}
+
+function playWin() {
+  // Little victory arpeggio
+  const notes = [523.25, 659.25, 783.99, 1046.5]; // C5 E5 G5 C6
+  notes.forEach((freq, i) => {
+    setTimeout(() => playTone(freq, 0.25, 'sine', 0.15), i * 120);
+  });
+}
+
+function playClick() {
+  playTone(800, 0.05, 'square', 0.06);
+}
+
+// ========== DOM ==========
 const boardEl = document.getElementById('board');
 const movesEl = document.getElementById('moves');
 const timerEl = document.getElementById('timer');
@@ -37,6 +105,7 @@ const themeSelect = document.getElementById('theme');
 const difficultySelect = document.getElementById('difficulty');
 const newGameBtn = document.getElementById('new-game');
 const showRankingBtn = document.getElementById('show-ranking');
+const muteBtn = document.getElementById('mute-btn');
 const overlay = document.getElementById('overlay');
 const modalTitle = document.getElementById('modal-title');
 const modalMessage = document.getElementById('modal-message');
@@ -56,7 +125,6 @@ async function getScores() {
 async function saveScore(score) {
   const scores = await getScores();
   scores.push(score);
-  // Keep only best 20, sorted by moves then time
   scores.sort((a, b) => {
     if (a.moves !== b.moves) return a.moves - b.moves;
     return a.time - b.time;
@@ -65,6 +133,26 @@ async function saveScore(score) {
   return new Promise((resolve) => {
     chrome.storage.local.set({ scores: top }, resolve);
   });
+}
+
+async function loadMutePreference() {
+  return new Promise((resolve) => {
+    chrome.storage.local.get(['muted'], (result) => {
+      state.muted = !!result.muted;
+      updateMuteUI();
+      resolve();
+    });
+  });
+}
+
+function saveMutePreference() {
+  chrome.storage.local.set({ muted: state.muted });
+}
+
+function updateMuteUI() {
+  muteBtn.textContent = state.muted ? '🔇' : '🔊';
+  muteBtn.classList.toggle('muted', state.muted);
+  muteBtn.title = state.muted ? 'Activar sonido' : 'Silenciar';
 }
 
 // ========== Game logic ==========
@@ -95,7 +183,7 @@ function stopTimer() {
 }
 
 function createBoard() {
-  const { pairs, cols } = DIFFICULTY[state.difficulty];
+  const { pairs } = DIFFICULTY[state.difficulty];
   const symbols = THEMES[state.theme].slice(0, pairs);
   const deck = shuffle([...symbols, ...symbols]);
 
@@ -141,6 +229,7 @@ function onCardClick(id) {
   card.flipped = true;
   state.flipped.push(id);
   updateCardUI(id);
+  playFlip();
 
   if (state.flipped.length === 2) {
     state.moves++;
@@ -160,12 +249,14 @@ function onCardClick(id) {
       updateCardUI(id2);
       state.flipped = [];
       state.locked = false;
+      playMatch();
 
       if (state.matched === state.cards.length) {
         onWin();
       }
     } else {
-      // No match → flip back after delay
+      // No match
+      playMismatch();
       setTimeout(() => {
         c1.flipped = false;
         c2.flipped = false;
@@ -189,6 +280,8 @@ function updateCardUI(id) {
 
 async function onWin() {
   stopTimer();
+  playWin();
+
   const score = {
     moves: state.moves,
     time: state.timer,
@@ -206,6 +299,7 @@ async function onWin() {
 }
 
 async function showRanking() {
+  playClick();
   const scores = await getScores();
   rankingList.innerHTML = '';
 
@@ -235,17 +329,31 @@ function closeModal() {
 
 // ========== Events ==========
 newGameBtn.addEventListener('click', () => {
+  playClick();
   state.theme = themeSelect.value;
   state.difficulty = difficultySelect.value;
   createBoard();
 });
 
 showRankingBtn.addEventListener('click', showRanking);
+
 playAgainBtn.addEventListener('click', () => {
+  playClick();
   closeModal();
   createBoard();
 });
-closeModalBtn.addEventListener('click', closeModal);
+
+closeModalBtn.addEventListener('click', () => {
+  playClick();
+  closeModal();
+});
+
+muteBtn.addEventListener('click', () => {
+  state.muted = !state.muted;
+  updateMuteUI();
+  saveMutePreference();
+  if (!state.muted) playClick(); // feedback when unmuting
+});
 
 themeSelect.addEventListener('change', () => {
   state.theme = themeSelect.value;
@@ -255,5 +363,7 @@ difficultySelect.addEventListener('change', () => {
   state.difficulty = difficultySelect.value;
 });
 
-// Start first game
-createBoard();
+// Init
+loadMutePreference().then(() => {
+  createBoard();
+});
