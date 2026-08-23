@@ -1,6 +1,6 @@
 # 🧠 Memory Match - Temático (Chrome Extension)
 
-Juego de **Memory Match** (memoria) como extensión de Chrome, con temas divertidos, varias dificultades, **ranking local** y **sonidos**.
+Juego de **Memory Match** (memoria) como extensión de Chrome, con temas divertidos, varias dificultades, **ranking local**, **sonidos** y **animaciones suaves**.
 
 ## Características
 
@@ -10,6 +10,7 @@ Juego de **Memory Match** (memoria) como extensión de Chrome, con temas diverti
 - Ranking local (top 20) guardado con `chrome.storage.local`
 - **Sonidos** (Web Audio API): volteo, match, error y victoria
 - Botón de mute (se recuerda la preferencia)
+- **Animaciones suaves**: flip con easing, pop al hacer match, shake al fallar, entrada escalonada de cartas y modal con transición
 - Diseño moderno y responsive al popup
 - 100% offline (después de instalar)
 
@@ -39,8 +40,8 @@ chrome-memory-match/
 ├── manifest.json          # Manifest V3
 ├── popup/
 │   ├── popup.html         # UI
-│   ├── popup.css          # Estilos
-│   └── popup.js           # Lógica del juego + ranking + sonidos
+│   ├── popup.css          # Estilos + animaciones
+│   └── popup.js           # Lógica del juego + ranking + sonidos + animaciones
 ├── icons/                 # iconos de la extensión
 └── README.md
 ```
@@ -49,7 +50,7 @@ chrome-memory-match/
 
 - [x] Añadir iconos oficiales
 - [x] Sonidos al voltear / hacer match
-- [ ] Animaciones más suaves
+- [x] Animaciones más suaves
 - [ ] Modo diario (challenge del día)
 - [ ] Compartir puntuación
 - [ ] Publicar en Chrome Web Store
