@@ -125,16 +125,61 @@ select {
   gap: 8px;
   justify-content: center;
   margin: 8px auto;
-  perspective: 800px;
+  perspective: 1000px;
 }
 
+/* ===== Card base & flip ===== */
 .card {
   width: 64px;
   height: 64px;
   position: relative;
   cursor: pointer;
   transform-style: preserve-3d;
-  transition: transform 0.4s ease;
+  transition: transform 0.55s cubic-bezier(0.4, 0.2, 0.2, 1),
+              box-shadow 0.25s ease;
+  opacity: 0;
+  animation: cardAppear 0.4s ease forwards;
+}
+
+.card:nth-child(1)  { animation-delay: 0.02s; }
+.card:nth-child(2)  { animation-delay: 0.04s; }
+.card:nth-child(3)  { animation-delay: 0.06s; }
+.card:nth-child(4)  { animation-delay: 0.08s; }
+.card:nth-child(5)  { animation-delay: 0.10s; }
+.card:nth-child(6)  { animation-delay: 0.12s; }
+.card:nth-child(7)  { animation-delay: 0.14s; }
+.card:nth-child(8)  { animation-delay: 0.16s; }
+.card:nth-child(9)  { animation-delay: 0.18s; }
+.card:nth-child(10) { animation-delay: 0.20s; }
+.card:nth-child(11) { animation-delay: 0.22s; }
+.card:nth-child(12) { animation-delay: 0.24s; }
+.card:nth-child(13) { animation-delay: 0.26s; }
+.card:nth-child(14) { animation-delay: 0.28s; }
+.card:nth-child(15) { animation-delay: 0.30s; }
+.card:nth-child(16) { animation-delay: 0.32s; }
+.card:nth-child(17) { animation-delay: 0.34s; }
+.card:nth-child(18) { animation-delay: 0.36s; }
+.card:nth-child(19) { animation-delay: 0.38s; }
+.card:nth-child(20) { animation-delay: 0.40s; }
+.card:nth-child(21) { animation-delay: 0.42s; }
+.card:nth-child(22) { animation-delay: 0.44s; }
+.card:nth-child(23) { animation-delay: 0.46s; }
+.card:nth-child(24) { animation-delay: 0.48s; }
+
+@keyframes cardAppear {
+  from {
+    opacity: 0;
+    transform: scale(0.6) translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.card:not(.flipped):not(.matched):hover {
+  transform: translateY(-4px) scale(1.04);
+  box-shadow: 0 8px 18px rgba(0, 210, 255, 0.25);
 }
 
 .card.flipped,
@@ -142,9 +187,40 @@ select {
   transform: rotateY(180deg);
 }
 
+/* Match pop effect */
+.card.match-pop {
+  animation: matchPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes matchPop {
+  0%   { transform: rotateY(180deg) scale(1); }
+  40%  { transform: rotateY(180deg) scale(1.18); }
+  70%  { transform: rotateY(180deg) scale(0.95); }
+  100% { transform: rotateY(180deg) scale(1); }
+}
+
+/* Shake on mismatch */
+.card.shake {
+  animation: shake 0.45s ease;
+}
+
+@keyframes shake {
+  0%, 100% { transform: rotateY(180deg) translateX(0); }
+  20%      { transform: rotateY(180deg) translateX(-6px); }
+  40%      { transform: rotateY(180deg) translateX(6px); }
+  60%      { transform: rotateY(180deg) translateX(-4px); }
+  80%      { transform: rotateY(180deg) translateX(4px); }
+}
+
 .card.matched {
   cursor: default;
-  opacity: 0.75;
+  opacity: 0.82;
+  transition: opacity 0.4s ease, transform 0.55s cubic-bezier(0.4, 0.2, 0.2, 1);
+}
+
+.card.matched .card-back {
+  border-color: #00d2ff;
+  box-shadow: 0 0 12px rgba(0, 210, 255, 0.45);
 }
 
 .card-face {
@@ -159,6 +235,7 @@ select {
   font-size: 1.8rem;
   user-select: none;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35);
+  transition: box-shadow 0.25s ease, border-color 0.3s ease;
 }
 
 .card-front {
@@ -195,7 +272,7 @@ select {
   font-size: 1.4rem;
 }
 
-/* Overlay / Modal */
+/* ===== Overlay / Modal ===== */
 .overlay {
   position: fixed;
   inset: 0;
@@ -204,10 +281,17 @@ select {
   align-items: center;
   justify-content: center;
   z-index: 100;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.overlay:not(.hidden) {
+  opacity: 1;
 }
 
 .overlay.hidden {
   display: none;
+  opacity: 0;
 }
 
 .modal {
@@ -219,6 +303,15 @@ select {
   max-width: 300px;
   text-align: center;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  transform: scale(0.85) translateY(20px);
+  opacity: 0;
+  transition: transform 0.35s cubic-bezier(0.34, 1.4, 0.64, 1),
+              opacity 0.3s ease;
+}
+
+.overlay:not(.hidden) .modal {
+  transform: scale(1) translateY(0);
+  opacity: 1;
 }
 
 .modal h2 {
