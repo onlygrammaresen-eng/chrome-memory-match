@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Memory Match</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="app">
+    <header>
+      <h1>🧠 Memory Match</h1>
+      <div class="stats">
+        <span id="moves">Movimientos: 0</span>
+        <span id="timer">Tiempo: 0s</span>
+      </div>
+    </header>
+
+    <div class="controls">
+      <label for="theme">Tema:</label>
+      <select id="theme">
+        <option value="emojis">Emojis</option>
+        <option value="animals">Animales</option>
+        <option value="fruits">Frutas</option>
+        <option value="space">Espacio</option>
+        <option value="food">Comida</option>
+      </select>
+
+      <label for="difficulty">Dificultad:</label>
+      <select id="difficulty">
+        <option value="easy">Fácil (4 pares)</option>
+        <option value="medium" selected>Media (8 pares)</option>
+        <option value="hard">Difícil (12 pares)</option>
+      </select>
+
+      <button id="new-game" class="btn primary">Nueva partida</button>
+      <button id="show-ranking" class="btn secondary">🏆 Ranking</button>
+    </div>
+
+    <div id="board" class="board"></div>
+
+    <div id="overlay" class="overlay hidden">
+      <div class="modal">
+        <h2 id="modal-title">¡Ganaste!</h2>
+        <p id="modal-message"></p>
+        <div id="ranking-list" class="ranking-list hidden"></div>
+        <button id="play-again" class="btn primary">Jugar de nuevo</button>
+        <button id="close-modal" class="btn secondary">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
