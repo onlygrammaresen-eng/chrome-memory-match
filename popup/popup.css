@@ -36,9 +36,35 @@ header h1 {
 .stats {
   display: flex;
   justify-content: center;
+  align-items: center;
   gap: 18px;
   font-size: 0.9rem;
   opacity: 0.9;
+}
+
+.mute-btn {
+  background: transparent;
+  border: 1px solid #3a7bd5;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, transform 0.15s;
+  padding: 0;
+  line-height: 1;
+}
+
+.mute-btn:hover {
+  background: rgba(58, 123, 213, 0.3);
+  transform: scale(1.1);
+}
+
+.mute-btn.muted {
+  opacity: 0.5;
 }
 
 .controls {
