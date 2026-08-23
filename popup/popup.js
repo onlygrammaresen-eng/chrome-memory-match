@@ -1,6 +1,6 @@
 /**
  * Memory Match - Chrome Extension
- * Temas + ranking local + sonidos (Web Audio API)
+ * Temas + ranking local + sonidos + animaciones suaves
  */
 
 const THEMES = {
@@ -38,7 +38,6 @@ function getAudioContext() {
   if (!audioCtx) {
     audioCtx = new AudioCtx();
   }
-  // Resume if suspended (Chrome policy)
   if (audioCtx.state === 'suspended') {
     audioCtx.resume();
   }
@@ -74,10 +73,9 @@ function playFlip() {
 }
 
 function playMatch() {
-  // Nice ascending chime
-  playTone(523.25, 0.12, 'sine', 0.14); // C5
-  setTimeout(() => playTone(659.25, 0.12, 'sine', 0.14), 80); // E5
-  setTimeout(() => playTone(783.99, 0.18, 'sine', 0.16), 160); // G5
+  playTone(523.25, 0.12, 'sine', 0.14);
+  setTimeout(() => playTone(659.25, 0.12, 'sine', 0.14), 80);
+  setTimeout(() => playTone(783.99, 0.18, 'sine', 0.16), 160);
 }
 
 function playMismatch() {
@@ -86,8 +84,7 @@ function playMismatch() {
 }
 
 function playWin() {
-  // Little victory arpeggio
-  const notes = [523.25, 659.25, 783.99, 1046.5]; // C5 E5 G5 C6
+  const notes = [523.25, 659.25, 783.99, 1046.5];
   notes.forEach((freq, i) => {
     setTimeout(() => playTone(freq, 0.25, 'sine', 0.15), i * 120);
   });
@@ -153,6 +150,14 @@ function updateMuteUI() {
   muteBtn.textContent = state.muted ? '🔇' : '🔊';
   muteBtn.classList.toggle('muted', state.muted);
   muteBtn.title = state.muted ? 'Activar sonido' : 'Silenciar';
+}
+
+// ========== Animation helpers ==========
+function triggerAnimation(id, className, duration = 500) {
+  const el = boardEl.querySelector(`[data-id="${id}"]`);
+  if (!el) return;
+  el.classList.add(className);
+  setTimeout(() => el.classList.remove(className), duration);
 }
 
 // ========== Game logic ==========
@@ -247,16 +252,25 @@ function onCardClick(id) {
       state.matched += 2;
       updateCardUI(id1);
       updateCardUI(id2);
+
+      // Pop animation
+      triggerAnimation(id1, 'match-pop', 500);
+      triggerAnimation(id2, 'match-pop', 500);
+
       state.flipped = [];
       state.locked = false;
       playMatch();
 
       if (state.matched === state.cards.length) {
-        onWin();
+        // Small delay so the last match-pop is visible
+        setTimeout(() => onWin(), 450);
       }
     } else {
-      // No match
+      // No match → shake then flip back
       playMismatch();
+      triggerAnimation(id1, 'shake', 450);
+      triggerAnimation(id2, 'shake', 450);
+
       setTimeout(() => {
         c1.flipped = false;
         c2.flipped = false;
@@ -264,7 +278,7 @@ function onCardClick(id) {
         updateCardUI(id2);
         state.flipped = [];
         state.locked = false;
-      }, 700);
+      }, 650);
     }
   }
 }
@@ -352,7 +366,7 @@ muteBtn.addEventListener('click', () => {
   state.muted = !state.muted;
   updateMuteUI();
   saveMutePreference();
-  if (!state.muted) playClick(); // feedback when unmuting
+  if (!state.muted) playClick();
 });
 
 themeSelect.addEventListener('change', () => {
