@@ -120,6 +120,28 @@ select {
   border: 1px solid #3a7bd5;
 }
 
+.btn.daily {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #fff;
+}
+
+.mode-badge {
+  text-align: center;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #fbbf24;
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  border-radius: 20px;
+  padding: 4px 12px;
+  margin: 0 auto;
+  width: fit-content;
+}
+
+.mode-badge.hidden {
+  display: none;
+}
+
 .board {
   display: grid;
   gap: 8px;
