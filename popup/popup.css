@@ -125,85 +125,22 @@ select {
   gap: 8px;
   justify-content: center;
   margin: 8px auto;
-  perspective: 1000px;
+  perspective: 800px;
 }
 
-/* ===== Card base & flip ===== */
+/* ========== CARD (stable 3D flip) ========== */
 .card {
   width: 64px;
   height: 64px;
   position: relative;
   cursor: pointer;
   transform-style: preserve-3d;
-  transition: transform 0.5s cubic-bezier(0.4, 0.2, 0.2, 1),
-              box-shadow 0.25s ease;
-  opacity: 0;
-  animation: cardAppear 0.35s ease forwards;
+  transition: transform 0.45s ease;
 }
 
-.card:nth-child(1)  { animation-delay: 0.02s; }
-.card:nth-child(2)  { animation-delay: 0.04s; }
-.card:nth-child(3)  { animation-delay: 0.06s; }
-.card:nth-child(4)  { animation-delay: 0.08s; }
-.card:nth-child(5)  { animation-delay: 0.10s; }
-.card:nth-child(6)  { animation-delay: 0.12s; }
-.card:nth-child(7)  { animation-delay: 0.14s; }
-.card:nth-child(8)  { animation-delay: 0.16s; }
-.card:nth-child(9)  { animation-delay: 0.18s; }
-.card:nth-child(10) { animation-delay: 0.20s; }
-.card:nth-child(11) { animation-delay: 0.22s; }
-.card:nth-child(12) { animation-delay: 0.24s; }
-.card:nth-child(13) { animation-delay: 0.26s; }
-.card:nth-child(14) { animation-delay: 0.28s; }
-.card:nth-child(15) { animation-delay: 0.30s; }
-.card:nth-child(16) { animation-delay: 0.32s; }
-.card:nth-child(17) { animation-delay: 0.34s; }
-.card:nth-child(18) { animation-delay: 0.36s; }
-.card:nth-child(19) { animation-delay: 0.38s; }
-.card:nth-child(20) { animation-delay: 0.40s; }
-.card:nth-child(21) { animation-delay: 0.42s; }
-.card:nth-child(22) { animation-delay: 0.44s; }
-.card:nth-child(23) { animation-delay: 0.46s; }
-.card:nth-child(24) { animation-delay: 0.48s; }
-
-/* Solo opacity para no pelear con el transform del flip */
-@keyframes cardAppear {
-  from { opacity: 0; }
-  to   { opacity: 1; }
-}
-
-.card:not(.flipped):not(.matched):hover {
-  transform: translateY(-3px) scale(1.03);
-  box-shadow: 0 8px 16px rgba(0, 210, 255, 0.2);
-}
-
-/* Estado volteado */
 .card.flipped,
 .card.matched {
   transform: rotateY(180deg);
-}
-
-/* Match pop – se aplica encima del flipped */
-.card.match-pop {
-  animation: matchPop 0.45s cubic-bezier(0.34, 1.4, 0.64, 1);
-}
-
-@keyframes matchPop {
-  0%   { transform: rotateY(180deg) scale(1); }
-  45%  { transform: rotateY(180deg) scale(1.15); }
-  100% { transform: rotateY(180deg) scale(1); }
-}
-
-/* Shake on mismatch */
-.card.shake {
-  animation: shake 0.4s ease;
-}
-
-@keyframes shake {
-  0%, 100% { transform: rotateY(180deg) translateX(0); }
-  25%      { transform: rotateY(180deg) translateX(-5px); }
-  50%      { transform: rotateY(180deg) translateX(5px); }
-  75%      { transform: rotateY(180deg) translateX(-3px); }
 }
 
 .card.matched {
@@ -211,14 +148,12 @@ select {
   opacity: 0.85;
 }
 
-.card.matched .card-back {
-  border-color: #00d2ff;
-  box-shadow: 0 0 12px rgba(0, 210, 255, 0.4);
-}
-
 .card-face {
   position: absolute;
-  inset: 0;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
   border-radius: 10px;
@@ -240,6 +175,28 @@ select {
   background: #1f4068;
   border: 2px solid #3a7bd5;
   transform: rotateY(180deg);
+}
+
+.card.matched .card-back {
+  border-color: #00d2ff;
+  box-shadow: 0 0 10px rgba(0, 210, 255, 0.4);
+}
+
+/* Hover solo cuando no está volteada */
+.card:not(.flipped):not(.matched):hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 14px rgba(0, 210, 255, 0.2);
+}
+
+/* Match feedback (suave, sin romper el flip) */
+.card.match-pop .card-back {
+  animation: matchGlow 0.5s ease;
+}
+
+@keyframes matchGlow {
+  0%   { box-shadow: 0 0 0 rgba(0, 210, 255, 0); transform: rotateY(180deg) scale(1); }
+  40%  { box-shadow: 0 0 18px rgba(0, 210, 255, 0.7); transform: rotateY(180deg) scale(1.08); }
+  100% { box-shadow: 0 0 10px rgba(0, 210, 255, 0.4); transform: rotateY(180deg) scale(1); }
 }
 
 /* Difficulty sizes */
@@ -264,7 +221,7 @@ select {
   font-size: 1.4rem;
 }
 
-/* ===== Overlay / Modal ===== */
+/* ========== Overlay / Modal ========== */
 .overlay {
   position: fixed;
   inset: 0;
@@ -295,10 +252,9 @@ select {
   max-width: 300px;
   text-align: center;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-  transform: scale(0.9) translateY(12px);
+  transform: scale(0.92) translateY(10px);
   opacity: 0;
-  transition: transform 0.3s cubic-bezier(0.34, 1.3, 0.64, 1),
-              opacity 0.25s ease;
+  transition: transform 0.3s ease, opacity 0.25s ease;
 }
 
 .overlay:not(.hidden) .modal {
