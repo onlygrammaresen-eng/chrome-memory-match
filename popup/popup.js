@@ -1,6 +1,6 @@
 /**
  * Memory Match - Chrome Extension
- * Temas + ranking local + sonidos + animaciones suaves
+ * Temas + ranking local + sonidos + animaciones suaves (versión estable)
  */
 
 const THEMES = {
@@ -153,11 +153,11 @@ function updateMuteUI() {
 }
 
 // ========== Animation helpers ==========
-function triggerAnimation(id, className, duration = 500) {
+function triggerMatchPop(id) {
   const el = boardEl.querySelector(`[data-id="${id}"]`);
   if (!el) return;
-  el.classList.add(className);
-  setTimeout(() => el.classList.remove(className), duration);
+  el.classList.add('match-pop');
+  setTimeout(() => el.classList.remove('match-pop'), 500);
 }
 
 // ========== Game logic ==========
@@ -253,24 +253,19 @@ function onCardClick(id) {
       updateCardUI(id1);
       updateCardUI(id2);
 
-      // Pop animation
-      triggerAnimation(id1, 'match-pop', 500);
-      triggerAnimation(id2, 'match-pop', 500);
+      triggerMatchPop(id1);
+      triggerMatchPop(id2);
 
       state.flipped = [];
       state.locked = false;
       playMatch();
 
       if (state.matched === state.cards.length) {
-        // Small delay so the last match-pop is visible
-        setTimeout(() => onWin(), 450);
+        setTimeout(() => onWin(), 400);
       }
     } else {
-      // No match → shake then flip back
+      // No match
       playMismatch();
-      triggerAnimation(id1, 'shake', 450);
-      triggerAnimation(id2, 'shake', 450);
-
       setTimeout(() => {
         c1.flipped = false;
         c2.flipped = false;
@@ -278,7 +273,7 @@ function onCardClick(id) {
         updateCardUI(id2);
         state.flipped = [];
         state.locked = false;
-      }, 650);
+      }, 700);
     }
   }
 }
