@@ -1,6 +1,6 @@
 /**
  * Memory Match - Chrome Extension
- * Temas + ranking + sonidos + animaciones + Modo Diario
+ * Temas + ranking + sonidos + diario + logros/medallas
  */
 
 const THEMES = {
@@ -19,6 +19,22 @@ const DIFFICULTY = {
   hard: { pairs: 12, cols: 6 }
 };
 
+// Catálogo de logros
+const ACHIEVEMENTS = [
+  { id: 'first_win', medal: '🥉', name: 'Primera victoria', desc: 'Gana cualquier partida' },
+  { id: 'perfect_easy', medal: '🥇', name: 'Memoria perfecta', desc: 'Gana fácil en 4 movimientos' },
+  { id: 'speed_medium', medal: '⚡', name: 'Velocista', desc: 'Gana media en menos de 45s' },
+  { id: 'hard_master', medal: '💎', name: 'Maestro difícil', desc: 'Gana una partida difícil' },
+  { id: 'efficient_hard', medal: '🎯', name: 'Cirujano', desc: 'Gana difícil en ≤ 20 movimientos' },
+  { id: 'theme_explorer', medal: '🗺️', name: 'Explorador', desc: 'Gana con los 5 temas' },
+  { id: 'daily_first', medal: '📅', name: 'Rutina diaria', desc: 'Completa tu primer desafío diario' },
+  { id: 'daily_streak_3', medal: '🔥', name: 'Racha x3', desc: 'Completa el diario 3 días seguidos' },
+  { id: 'daily_streak_7', medal: '🔥🔥', name: 'Racha x7', desc: 'Completa el diario 7 días seguidos' },
+  { id: 'wins_10', medal: '🎮', name: 'Veterano', desc: 'Gana 10 partidas' },
+  { id: 'wins_25', medal: '🏅', name: 'Campeón', desc: 'Gana 25 partidas' },
+  { id: 'collector', medal: '👑', name: 'Coleccionista', desc: 'Desbloquea 10 logros' }
+];
+
 let state = {
   cards: [],
   flipped: [],
@@ -33,7 +49,7 @@ let state = {
   isDaily: false
 };
 
-// ========== Sound System ==========
+// ========== Sound ==========
 const AudioCtx = window.AudioContext || window.webkitAudioContext;
 let audioCtx = null;
 
@@ -76,6 +92,10 @@ function playWin() {
   });
 }
 function playClick() { playTone(800, 0.05, 'square', 0.06); }
+function playAchievement() {
+  playTone(880, 0.1, 'sine', 0.12);
+  setTimeout(() => playTone(1174.7, 0.18, 'sine', 0.14), 90);
+}
 
 // ========== DOM ==========
 const boardEl = document.getElementById('board');
@@ -86,12 +106,15 @@ const difficultySelect = document.getElementById('difficulty');
 const newGameBtn = document.getElementById('new-game');
 const dailyBtn = document.getElementById('daily-btn');
 const showRankingBtn = document.getElementById('show-ranking');
+const showAchievementsBtn = document.getElementById('show-achievements');
 const muteBtn = document.getElementById('mute-btn');
 const modeBadge = document.getElementById('mode-badge');
 const overlay = document.getElementById('overlay');
 const modalTitle = document.getElementById('modal-title');
 const modalMessage = document.getElementById('modal-message');
 const rankingList = document.getElementById('ranking-list');
+const achievementsList = document.getElementById('achievements-list');
+const unlockedToast = document.getElementById('unlocked-toast');
 const playAgainBtn = document.getElementById('play-again');
 const closeModalBtn = document.getElementById('close-modal');
 
@@ -102,14 +125,11 @@ function getTodayKey() {
 }
 
 function getDailyTheme() {
-  // Rota el tema según el día del año
   const start = new Date(new Date().getFullYear(), 0, 0);
-  const diff = new Date() - start;
-  const dayOfYear = Math.floor(diff / 86400000);
+  const dayOfYear = Math.floor((new Date() - start) / 86400000);
   return THEME_KEYS[dayOfYear % THEME_KEYS.length];
 }
 
-// Seeded random (mulberry32)
 function mulberry32(seed) {
   return function () {
     let t = (seed += 0x6d2b79f5);
@@ -120,15 +140,21 @@ function mulberry32(seed) {
 }
 
 function seededShuffle(array, seedStr) {
-  // Simple string → number seed
   let seed = 0;
-  for (let i = 0; i < seedStr.length; i++) {
-    seed = (seed * 31 + seedStr.charCodeAt(i)) >>> 0;
-  }
+  for (let i = 0; i < seedStr.length; i++) seed = (seed * 31 + seedStr.charCodeAt(i)) >>> 0;
   const rand = mulberry32(seed);
   const arr = [...array];
   for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(rand() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function shuffle(array) {
+  const arr = [...array];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
     [arr[i], arr[j]] = [arr[j], arr[i]];
   }
   return arr;
@@ -160,10 +186,8 @@ async function saveDailyBest(score) {
   const key = getTodayKey();
   const data = await getDailyBest();
   const prev = data[key];
-  // Solo guarda si es mejor (menos movimientos, o igual movimientos y menos tiempo)
   if (!prev || score.moves < prev.moves || (score.moves === prev.moves && score.time < prev.time)) {
     data[key] = score;
-    // Limpia entradas muy antiguas (guarda últimos 30 días)
     const keys = Object.keys(data).sort().reverse().slice(0, 30);
     const cleaned = {};
     keys.forEach((k) => (cleaned[k] = data[k]));
@@ -171,6 +195,26 @@ async function saveDailyBest(score) {
       chrome.storage.local.set({ dailyBest: cleaned }, resolve);
     });
   }
+}
+
+async function getProgress() {
+  return new Promise((resolve) => {
+    chrome.storage.local.get(['progress'], (r) => {
+      resolve(r.progress || {
+        unlocked: {},
+        wins: 0,
+        themesWon: {},
+        difficultiesWon: {},
+        dailyDates: []
+      });
+    });
+  });
+}
+
+async function saveProgress(progress) {
+  return new Promise((resolve) => {
+    chrome.storage.local.set({ progress }, resolve);
+  });
 }
 
 async function loadMutePreference() {
@@ -193,6 +237,137 @@ function updateMuteUI() {
   muteBtn.title = state.muted ? 'Activar sonido' : 'Silenciar';
 }
 
+// ========== Achievements ==========
+function getDailyStreak(dailyDates) {
+  if (!dailyDates || dailyDates.length === 0) return 0;
+  const set = new Set(dailyDates);
+  let streak = 0;
+  const d = new Date();
+  // Cuenta hacia atrás desde hoy o ayer
+  const today = getTodayKey();
+  if (!set.has(today)) {
+    d.setDate(d.getDate() - 1);
+  }
+  while (true) {
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    if (!set.has(key)) break;
+    streak++;
+    d.setDate(d.getDate() - 1);
+  }
+  return streak;
+}
+
+async function evaluateAchievements(score) {
+  const progress = await getProgress();
+  const newlyUnlocked = [];
+
+  // Actualizar stats
+  progress.wins = (progress.wins || 0) + 1;
+  progress.themesWon = progress.themesWon || {};
+  progress.difficultiesWon = progress.difficultiesWon || {};
+  progress.dailyDates = progress.dailyDates || [];
+  progress.unlocked = progress.unlocked || {};
+
+  progress.themesWon[score.theme] = true;
+  progress.difficultiesWon[score.difficulty] = true;
+
+  if (score.isDaily) {
+    const today = getTodayKey();
+    if (!progress.dailyDates.includes(today)) {
+      progress.dailyDates.push(today);
+      progress.dailyDates.sort();
+      // Mantener últimos 60 días
+      progress.dailyDates = progress.dailyDates.slice(-60);
+    }
+  }
+
+  const unlock = (id) => {
+    if (!progress.unlocked[id]) {
+      progress.unlocked[id] = new Date().toISOString();
+      newlyUnlocked.push(id);
+    }
+  };
+
+  // Condiciones
+  unlock('first_win');
+
+  if (score.difficulty === 'easy' && score.moves <= 4) unlock('perfect_easy');
+  if (score.difficulty === 'medium' && score.time < 45) unlock('speed_medium');
+  if (score.difficulty === 'hard') unlock('hard_master');
+  if (score.difficulty === 'hard' && score.moves <= 20) unlock('efficient_hard');
+
+  const themesCount = Object.keys(progress.themesWon).length;
+  if (themesCount >= 5) unlock('theme_explorer');
+
+  if (score.isDaily) unlock('daily_first');
+
+  const streak = getDailyStreak(progress.dailyDates);
+  if (streak >= 3) unlock('daily_streak_3');
+  if (streak >= 7) unlock('daily_streak_7');
+
+  if (progress.wins >= 10) unlock('wins_10');
+  if (progress.wins >= 25) unlock('wins_25');
+
+  // Coleccionista al final (cuenta los ya desbloqueados)
+  if (Object.keys(progress.unlocked).length >= 10) unlock('collector');
+
+  await saveProgress(progress);
+  return { progress, newlyUnlocked };
+}
+
+function renderAchievementsPanel(progress) {
+  const unlocked = progress.unlocked || {};
+  const unlockedCount = Object.keys(unlocked).length;
+
+  achievementsList.innerHTML = `
+    <div class="achievements-summary" style="grid-column: 1 / -1;">
+      Medallas: <strong>${unlockedCount}</strong> / ${ACHIEVEMENTS.length}
+    </div>
+  `;
+
+  ACHIEVEMENTS.forEach((a) => {
+    const isUnlocked = !!unlocked[a.id];
+    const item = document.createElement('div');
+    item.className = `achievement-item ${isUnlocked ? 'unlocked' : 'locked'}`;
+    item.innerHTML = `
+      <div class="achievement-medal">${isUnlocked ? a.medal : '🔒'}</div>
+      <div class="achievement-name">${a.name}</div>
+      <div class="achievement-desc">${a.desc}</div>
+    `;
+    achievementsList.appendChild(item);
+  });
+}
+
+function showUnlockedToast(ids) {
+  if (!ids || ids.length === 0) {
+    unlockedToast.classList.add('hidden');
+    unlockedToast.innerHTML = '';
+    return;
+  }
+  const items = ids.map((id) => {
+    const a = ACHIEVEMENTS.find((x) => x.id === id);
+    return a ? `${a.medal} ${a.name}` : id;
+  });
+  unlockedToast.innerHTML = `
+    <div class="toast-title">¡Nuevo logro desbloqueado!</div>
+    <div>${items.join('<br>')}</div>
+  `;
+  unlockedToast.classList.remove('hidden');
+  playAchievement();
+}
+
+async function showAchievements() {
+  playClick();
+  const progress = await getProgress();
+  rankingList.classList.add('hidden');
+  unlockedToast.classList.add('hidden');
+  achievementsList.classList.remove('hidden');
+  modalTitle.textContent = '🏅 Logros y medallas';
+  modalMessage.textContent = 'Completa desafíos para desbloquear medallas.';
+  renderAchievementsPanel(progress);
+  overlay.classList.remove('hidden');
+}
+
 // ========== Animation ==========
 function triggerMatchPop(id) {
   const el = boardEl.querySelector(`[data-id="${id}"]`);
@@ -202,15 +377,6 @@ function triggerMatchPop(id) {
 }
 
 // ========== Game logic ==========
-function shuffle(array) {
-  const arr = [...array];
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-  return arr;
-}
-
 function startTimer() {
   stopTimer();
   state.timer = 0;
@@ -232,13 +398,9 @@ function createBoard() {
   const { pairs } = DIFFICULTY[state.difficulty];
   const symbols = THEMES[state.theme].slice(0, pairs);
 
-  let deck;
-  if (state.isDaily) {
-    // Tablero determinista según la fecha
-    deck = seededShuffle([...symbols, ...symbols], getTodayKey() + state.theme);
-  } else {
-    deck = shuffle([...symbols, ...symbols]);
-  }
+  const deck = state.isDaily
+    ? seededShuffle([...symbols, ...symbols], getTodayKey() + state.theme)
+    : shuffle([...symbols, ...symbols]);
 
   state.cards = deck.map((symbol, index) => ({
     id: index,
@@ -255,7 +417,6 @@ function createBoard() {
   boardEl.className = `board ${state.difficulty}`;
   boardEl.innerHTML = '';
 
-  // Badge de modo diario
   if (state.isDaily) {
     modeBadge.classList.remove('hidden');
     modeBadge.textContent = `📅 Desafío Diario · ${state.theme}`;
@@ -368,7 +529,11 @@ async function onWin() {
     modalMessage.textContent = `Lo completaste en ${state.moves} movimientos y ${state.timer} segundos.`;
   }
 
+  const { newlyUnlocked } = await evaluateAchievements(score);
+  showUnlockedToast(newlyUnlocked);
+
   rankingList.classList.add('hidden');
+  achievementsList.classList.add('hidden');
   overlay.classList.remove('hidden');
 }
 
@@ -376,6 +541,8 @@ async function showRanking() {
   playClick();
   const scores = await getScores();
   rankingList.innerHTML = '';
+  achievementsList.classList.add('hidden');
+  unlockedToast.classList.add('hidden');
 
   if (scores.length === 0) {
     rankingList.innerHTML = '<p style="text-align:center;opacity:0.7">Aún no hay partidas guardadas.</p>';
@@ -400,6 +567,9 @@ async function showRanking() {
 
 function closeModal() {
   overlay.classList.add('hidden');
+  achievementsList.classList.add('hidden');
+  rankingList.classList.add('hidden');
+  unlockedToast.classList.add('hidden');
 }
 
 function startNormalGame() {
@@ -412,7 +582,7 @@ function startNormalGame() {
 function startDailyChallenge() {
   state.isDaily = true;
   state.theme = getDailyTheme();
-  state.difficulty = 'medium'; // Fijo para el diario
+  state.difficulty = 'medium';
   themeSelect.value = state.theme;
   difficultySelect.value = 'medium';
   createBoard();
@@ -430,6 +600,7 @@ dailyBtn.addEventListener('click', () => {
 });
 
 showRankingBtn.addEventListener('click', showRanking);
+showAchievementsBtn.addEventListener('click', showAchievements);
 
 playAgainBtn.addEventListener('click', () => {
   playClick();
