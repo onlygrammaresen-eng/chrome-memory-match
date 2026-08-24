@@ -135,7 +135,7 @@ select {
   position: relative;
   cursor: pointer;
   transform-style: preserve-3d;
-  transition: transform 0.45s ease;
+  transition: transform 0.45s ease, opacity 0.3s ease;
 }
 
 .card.flipped,
@@ -145,7 +145,7 @@ select {
 
 .card.matched {
   cursor: default;
-  opacity: 0.85;
+  opacity: 0.55;
 }
 
 .card-face {
@@ -175,11 +175,15 @@ select {
   background: #1f4068;
   border: 2px solid #3a7bd5;
   transform: rotateY(180deg);
+  transition: background 0.3s ease, border-color 0.3s ease, filter 0.3s ease;
 }
 
+/* Cartas ya encontradas: más oscuras y distintas */
 .card.matched .card-back {
-  border-color: #00d2ff;
-  box-shadow: 0 0 10px rgba(0, 210, 255, 0.4);
+  background: #0d1b2a;
+  border-color: #1b3a4b;
+  box-shadow: none;
+  filter: brightness(0.7) saturate(0.6);
 }
 
 /* Hover solo cuando no está volteada */
@@ -194,9 +198,9 @@ select {
 }
 
 @keyframes matchGlow {
-  0%   { box-shadow: 0 0 0 rgba(0, 210, 255, 0); transform: rotateY(180deg) scale(1); }
-  40%  { box-shadow: 0 0 18px rgba(0, 210, 255, 0.7); transform: rotateY(180deg) scale(1.08); }
-  100% { box-shadow: 0 0 10px rgba(0, 210, 255, 0.4); transform: rotateY(180deg) scale(1); }
+  0%   { box-shadow: 0 0 0 rgba(0, 210, 255, 0); filter: brightness(1); }
+  40%  { box-shadow: 0 0 16px rgba(0, 210, 255, 0.6); filter: brightness(1.2); }
+  100% { box-shadow: none; filter: brightness(0.7) saturate(0.6); }
 }
 
 /* Difficulty sizes */
