@@ -1,67 +1,69 @@
 # 🧠 Memory Match - Temático (Chrome Extension)
 
-Juego de **Memory Match** (memoria) como extensión de Chrome, con temas divertidos, varias dificultades, **ranking local**, **sonidos**, **animaciones** y **Desafío Diario**.
+Juego de **Memory Match** como extensión de Chrome, con temas, ranking, sonidos, desafío diario y **sistema de logros/medallas**.
 
 ## Características
 
 - 5 temas: Emojis, Animales, Frutas, Espacio y Comida
 - 3 dificultades: Fácil (4 pares), Media (8 pares), Difícil (12 pares)
 - Contador de movimientos + temporizador
-- Ranking local (top 20) guardado con `chrome.storage.local`
-- **Sonidos** (Web Audio API): volteo, match, error y victoria
-- Botón de mute (se recuerda la preferencia)
-- **Animaciones suaves** y cartas encontradas más oscuras
-- **📅 Desafío Diario**: tablero fijo del día (seeded), tema rotativo y récord personal del día
-- Diseño moderno y responsive al popup
-- 100% offline (después de instalar)
+- Ranking local (top 20)
+- **Sonidos** (Web Audio API) + mute
+- **Animaciones** y cartas encontradas más oscuras
+- **📅 Desafío Diario**: tablero fijo del día + récord personal
+- **🏅 Logros y medallas** (12 logros con desbloqueo automático)
+- 100% offline
 
-## Cómo probarlo localmente
+## Logros incluidos
 
-1. Clona el repo:
-   ```bash
-   git clone https://github.com/onlygrammaresen-eng/chrome-memory-match.git
-   cd chrome-memory-match
-   ```
+| Medalla | Logro | Condición |
+|---------|-------|-----------|
+| 🥉 | Primera victoria | Gana cualquier partida |
+| 🥇 | Memoria perfecta | Gana fácil en 4 movimientos |
+| ⚡ | Velocista | Gana media en < 45s |
+| 💎 | Maestro difícil | Gana una partida difícil |
+| 🎯 | Cirujano | Gana difícil en ≤ 20 movimientos |
+| 🗺️ | Explorador | Gana con los 5 temas |
+| 📅 | Rutina diaria | Completa tu primer diario |
+| 🔥 | Racha x3 | Diario 3 días seguidos |
+| 🔥🔥 | Racha x7 | Diario 7 días seguidos |
+| 🎮 | Veterano | Gana 10 partidas |
+| 🏅 | Campeón | Gana 25 partidas |
+| 👑 | Coleccionista | Desbloquea 10 logros |
 
-2. Abre Chrome → `chrome://extensions/`
+## Cómo probarlo
 
-3. Activa **Modo de desarrollador** (arriba a la derecha)
+```bash
+git clone https://github.com/onlygrammaresen-eng/chrome-memory-match.git
+cd chrome-memory-match
+```
 
-4. Haz clic en **Cargar descomprimida** y selecciona la carpeta del proyecto
+1. Chrome → `chrome://extensions/`
+2. Activa **Modo de desarrollador**
+3. **Cargar descomprimida** → selecciona la carpeta del proyecto
 
-5. ¡Listo! Haz clic en el icono de la extensión para jugar
-
-> **Nota sobre iconos**: El `manifest.json` apunta a `icons/icon16.png`, `icon48.png` y `icon128.png`.  
-> Si aún no los tienes, usa los que generamos o crea los tuyos (recomendado 128×128 px).
-
-## Estructura del proyecto
+## Estructura
 
 ```
 chrome-memory-match/
-├── manifest.json          # Manifest V3
+├── manifest.json
 ├── popup/
-│   ├── popup.html         # UI
-│   ├── popup.css          # Estilos + animaciones
-│   └── popup.js           # Lógica del juego + ranking + sonidos + diario
-├── icons/                 # iconos de la extensión
+│   ├── popup.html
+│   ├── popup.css
+│   └── popup.js
+├── icons/
 └── README.md
 ```
 
-## Próximos pasos posibles
+## Próximos pasos
 
-- [x] Añadir iconos oficiales
-- [x] Sonidos al voltear / hacer match
-- [x] Animaciones más suaves
-- [x] Modo diario (challenge del día)
+- [x] Iconos
+- [x] Sonidos
+- [x] Animaciones
+- [x] Modo diario
+- [x] Sistema de logros y medallas
 - [ ] Compartir puntuación
 - [ ] Publicar en Chrome Web Store
-
-## Publicar en Chrome Web Store
-
-1. Crea una cuenta de desarrollador ($5 USD una sola vez): https://chrome.google.com/webstore/devconsole
-2. Empaqueta la carpeta (sin `.git`) en un `.zip`
-3. Sube el zip, añade capturas de pantalla y descripción
-4. Envía a revisión
 
 ---
 
